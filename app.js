@@ -25,6 +25,8 @@ const state = {
     isFullscreen: false,
     basePageWidth: 400,
     basePageHeight: 560,
+    panX: 0,
+    panY: 0,
 };
 
 // Mobile breakpoint
@@ -72,6 +74,9 @@ function init() {
     checkMobileMode();
     // Auto-load the PDF from book folder
     loadPdfFromUrl('book/book.pdf');
+
+    // Setup Zoom and Pan Controls (Global)
+    setupZoomPanControls();
 }
 
 function checkMobileMode() {
@@ -127,6 +132,10 @@ async function loadPdfFromUrl(url) {
 
         // Initialize flipbook
         await initFlipbook();
+
+        // Pre-render all pages to ensure smooth flipping
+        showLoading('Rendering pages...');
+        await preRenderAllPages();
 
         // Update crease visibility
         updateCreaseVisibility();
@@ -433,6 +442,18 @@ async function initFlipbook() {
     state.basePageWidth = pageWidth;
     state.basePageHeight = pageHeight;
 
+    // Set magazine container dimensions to match book exactly
+    // This ensures page-underneath allows aligns perfectly with the pages
+    const magazineContainer = document.getElementById('magazine-container');
+    if (magazineContainer) {
+        const totalWidth = state.isDoublePageMode ? pageWidth * 2 : pageWidth;
+        magazineContainer.style.width = `${totalWidth}px`;
+        magazineContainer.style.height = `${pageHeight}px`;
+        // Ensure accurate positioning for children (page-underneath)
+        // Switch to block to avoid flex items centering behaviors interfering with absolute positioning
+        magazineContainer.style.display = 'block';
+    }
+
     // Clear existing
     elements.flipbook.innerHTML = '';
 
@@ -581,8 +602,8 @@ async function initFlipbook() {
     // Set initial cover state
     updateCoverState();
 
-    // Setup zoom and pan controls
-    setupZoomAndPan();
+    // Set initial cover state
+    updateCoverState();
 
     // Render visible pages
     await renderVisiblePages();
@@ -635,8 +656,8 @@ async function renderPageContent(pageNum) {
     const contentDiv = pageElement.querySelector('.page-content');
     if (contentDiv.querySelector('canvas')) return; // Already rendered
 
-    const width = state.basePageWidth * state.zoom;
-    const height = state.basePageHeight * state.zoom;
+    const width = state.basePageWidth;
+    const height = state.basePageHeight;
 
     const canvas = await renderPage(pageNum, width, height);
     contentDiv.innerHTML = '';
@@ -696,76 +717,99 @@ async function addTextLayer(pageNum, container, width, height) {
 // Zoom and Pan Controls
 // ============================================
 
-function setupZoomAndPan() {
+function setupZoomPanControls() {
     const magazineContainer = document.getElementById('magazine-container');
     const woodenTable = document.querySelector('.wooden-table');
     let isPanning = false;
-    let startX, startY;
-    let currentX = 0, currentY = 0;
-    let currentZoom = 1;
+    let startPanX, startPanY;
 
     // Suppress context menu globally on the viewer
-    document.addEventListener('contextmenu', (e) => {
-        if (woodenTable && woodenTable.contains(e.target)) {
+    if (woodenTable) {
+        woodenTable.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-        }
-    });
+        });
+    }
 
     // Prevent right-click from triggering anything in flipbook
-    elements.flipbook.addEventListener('mousedown', (e) => {
-        if (e.button === 2) {
+    if (elements.flipbook) {
+        elements.flipbook.addEventListener('mousedown', (e) => {
+            // Allow left click for page turning, but prevent default for right click
+            if (e.button === 2) {
+                e.preventDefault();
+                // e.stopPropagation(); // Removed to allow panning
+            }
+        }, true);
+
+        elements.flipbook.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             e.stopPropagation();
-        }
-    }, true);
+        }, true);
+    }
 
     // Mouse wheel zoom
     woodenTable.addEventListener('wheel', (e) => {
+        // Ctrl+Wheel is standard for browser zoom, but here we want to hijack it?
+        // Or just simple wheel.
+        // Let's support simple wheel for zoom like a map
         e.preventDefault();
 
         const zoomSpeed = 0.15;
         const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
-        const newZoom = Math.min(Math.max(currentZoom + delta, 0.5), 3);
+        const newZoom = Math.min(Math.max(state.zoom + delta, state.minZoom), state.maxZoom);
 
-        currentZoom = newZoom;
-        applyTransform();
+        if (state.zoom !== newZoom) {
+            state.zoom = newZoom;
+            updateTransform();
+        }
     }, { passive: false });
 
-    // Right-click drag to pan (on wooden table area)
+    // Panning (Right Mouse Button)
     woodenTable.addEventListener('mousedown', (e) => {
         if (e.button === 2) { // Right mouse button
+            e.stopPropagation();
             isPanning = true;
-            startX = e.clientX - currentX;
-            startY = e.clientY - currentY;
+            // Record start position relative to current pan
+            startPanX = e.clientX - state.panX;
+            startPanY = e.clientY - state.panY;
+
             magazineContainer.style.cursor = 'grabbing';
             e.preventDefault();
-            e.stopPropagation();
         }
-    });
+    }, true);
+
+    // Capture mouseup on the table to stop propagation if we were panning with right click
+    woodenTable.addEventListener('mouseup', (e) => {
+        if (e.button === 2 && isPanning) {
+            e.stopPropagation();
+            isPanning = false;
+            magazineContainer.style.cursor = state.zoom > 1 ? 'grab' : 'default';
+        }
+    }, true);
 
     document.addEventListener('mousemove', (e) => {
         if (!isPanning) return;
 
-        currentX = e.clientX - startX;
-        currentY = e.clientY - startY;
-        applyTransform();
+        e.preventDefault();
+        state.panX = e.clientX - startPanX;
+        state.panY = e.clientY - startPanY;
+        updateTransform();
     });
 
     document.addEventListener('mouseup', (e) => {
-        if (e.button === 2) {
+        if (e.button === 2 && isPanning) {
             isPanning = false;
-            magazineContainer.style.cursor = currentZoom > 1 ? 'grab' : 'default';
+            magazineContainer.style.cursor = state.zoom > 1 ? 'grab' : 'default';
         }
     });
 
     // Mobile pinch-zoom support
-    let initialDistance = 0;
-    let initialZoom = 1;
+    let initialPinchDistance = 0;
+    let initialPinchZoom = 1;
 
     magazineContainer.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
-            initialDistance = getDistance(e.touches[0], e.touches[1]);
-            initialZoom = currentZoom;
+            initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
+            initialPinchZoom = state.zoom;
         }
     }, { passive: true });
 
@@ -773,9 +817,9 @@ function setupZoomAndPan() {
         if (e.touches.length === 2) {
             e.preventDefault();
             const distance = getDistance(e.touches[0], e.touches[1]);
-            const scale = distance / initialDistance;
-            currentZoom = Math.min(Math.max(initialZoom * scale, 0.5), 3);
-            applyTransform();
+            const scale = distance / initialPinchDistance;
+            state.zoom = Math.min(Math.max(initialPinchZoom * scale, state.minZoom), state.maxZoom);
+            updateTransform();
         }
     }, { passive: false });
 
@@ -786,50 +830,39 @@ function setupZoomAndPan() {
     }
 
     // Double-click to toggle zoom
-    let lastTap = 0;
-    elements.flipbook.addEventListener('dblclick', handleDoubleClickZoom);
-
-    // Touch double-tap support
-    elements.flipbook.addEventListener('touchend', (e) => {
-        if (e.touches.length > 0) return; // Ignore if still touching
-        const currentTime = new Date().getTime();
-        const tapLength = currentTime - lastTap;
-
-        if (tapLength < 300 && tapLength > 0) {
-            handleDoubleClickZoom(e);
-            e.preventDefault();
-        }
-        lastTap = currentTime;
+    elements.flipbook.addEventListener('dblclick', (e) => {
+        toggleZoom();
     });
+}
 
-    function handleDoubleClickZoom(e) {
-        if (currentZoom === 1) {
-            currentZoom = 1.8;
-            currentX = 0;
-            currentY = 0;
-        } else {
-            currentZoom = 1;
-            currentX = 0;
-            currentY = 0;
-        }
-        applyTransform();
+function updateTransform() {
+    const magazineContainer = document.getElementById('magazine-container');
+    if (!magazineContainer) return;
+
+    magazineContainer.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
+    // Only animate if we are NOT panning (panning should be instant)
+    // We can infer panning state or just leave it instant?
+    // Transition looks nice for Zoom In Click, but bad for Wheel/Pan.
+    // Let's set transition based on source? Hard to pass.
+    // Default to fast/none for responsiveness.
+    // Or set strictly in CSS and remove inline?
+    // Let's use simple logic:
+    magazineContainer.style.transition = 'none';
+    // If we want smooth zoom for buttons, we can add class or handle it.
+}
+
+function toggleZoom() {
+    if (state.zoom === 1) {
+        state.zoom = 1.8;
+        // Optionally center on click? For now, simple center zoom
+        state.panX = 0;
+        state.panY = 0;
+    } else {
+        state.zoom = 1;
+        state.panX = 0;
+        state.panY = 0;
     }
-
-    function applyTransform() {
-        magazineContainer.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentZoom})`;
-        magazineContainer.style.transition = isPanning ? 'none' : 'transform 0.2s ease';
-        magazineContainer.style.cursor = currentZoom > 1 ? 'grab' : 'default';
-    }
-
-    // Reset zoom on ESC
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && currentZoom !== 1) {
-            currentZoom = 1;
-            currentX = 0;
-            currentY = 0;
-            applyTransform();
-        }
-    });
+    updateTransform();
 }
 
 // ============================================
@@ -1014,21 +1047,22 @@ function updateCoverState() {
 function zoomIn() {
     if (state.zoom < state.maxZoom) {
         state.zoom = Math.min(state.zoom + 0.25, state.maxZoom);
-        applyZoom();
+        updateTransform();
     }
 }
 
 function zoomOut() {
     if (state.zoom > state.minZoom) {
         state.zoom = Math.max(state.zoom - 0.25, state.minZoom);
-        applyZoom();
+        updateTransform();
     }
 }
 
-function applyZoom() {
-    const magazineContainer = document.getElementById('magazine-container');
-    magazineContainer.style.transform = `scale(${state.zoom})`;
-    magazineContainer.style.transition = 'transform 0.2s ease';
+function resetZoom() {
+    state.zoom = 1;
+    state.panX = 0;
+    state.panY = 0;
+    updateTransform();
 }
 
 // ============================================
@@ -1128,9 +1162,8 @@ function handleKeydown(e) {
             }
             break;
         case 'Escape':
-            if (state.zoom !== 1) {
-                state.zoom = 1;
-                applyZoom();
+            if (state.zoom !== 1 || state.panX !== 0 || state.panY !== 0) {
+                resetZoom();
             }
             break;
     }
