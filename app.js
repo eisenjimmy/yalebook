@@ -700,7 +700,7 @@ async function addTextLayer(pageNum, container, width, height) {
             const span = document.createElement('span');
             span.textContent = item.str;
             span.style.left = `${tx[4]}px`;
-            span.style.top = `${height - tx[5]}px`;
+            span.style.top = `${tx[5] - 15}px`;
             span.style.fontSize = `${Math.abs(tx[0])}px`;
             span.style.fontFamily = item.fontName || 'sans-serif';
 
