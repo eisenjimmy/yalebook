@@ -1363,16 +1363,42 @@ function setupMobileControls() {
         });
     }
 
+    // Helper functions for pinch calculation
+    const getDistance = (touch1, touch2) => {
+        const dx = touch1.clientX - touch2.clientX;
+        const dy = touch1.clientY - touch2.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const getCenter = (touch1, touch2) => {
+        return {
+            x: (touch1.clientX + touch2.clientX) / 2,
+            y: (touch1.clientY + touch2.clientY) / 2
+        };
+    };
+
+    let initialPinchDistance = 0;
+    let initialPinchZoom = 1;
+    let initialPinchCenter = { x: 0, y: 0 };
+    let initialPanState = { x: 0, y: 0 };
+
     // Single Finger Pan Logic
     let lastTouchX = 0;
     let lastTouchY = 0;
 
     const handleTouchStart = (e) => {
-        // Block multi-touch (pinch) from triggering flip
-        if (e.touches.length > 1) {
-            e.stopPropagation();
+        // 2-Finger Pinch/Pan (Capture phase to block StPageFlip)
+        if (e.touches.length === 2) {
+            e.stopPropagation(); // Block StPageFlip
+
+            initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
+            initialPinchZoom = state.zoom;
+            initialPinchCenter = getCenter(e.touches[0], e.touches[1]);
+            initialPanState = { x: state.panX, y: state.panY };
+            return;
         }
 
+        // 1-Finger Pan (if Pan Mode active)
         if (state.isMobilePanMode && e.touches.length === 1) {
             e.stopPropagation(); // Stop flip engine
             lastTouchX = e.touches[0].clientX;
@@ -1381,11 +1407,31 @@ function setupMobileControls() {
     };
 
     const handleTouchMove = (e) => {
-        // Block multi-touch (pinch) from triggering flip
-        if (e.touches.length > 1) {
-            e.stopPropagation();
+        // 2-Finger Pinch/Pan
+        if (e.touches.length === 2) {
+            e.preventDefault(); // Prevent browser behavior
+            e.stopPropagation(); // Block StPageFlip
+
+            // Pinch Zoom
+            const distance = getDistance(e.touches[0], e.touches[1]);
+            if (initialPinchDistance > 0) {
+                const scale = distance / initialPinchDistance;
+                state.zoom = Math.min(Math.max(initialPinchZoom * scale, state.minZoom), state.maxZoom);
+            }
+
+            // Two-Finger Pan
+            const currentCenter = getCenter(e.touches[0], e.touches[1]);
+            const deltaX = currentCenter.x - initialPinchCenter.x;
+            const deltaY = currentCenter.y - initialPinchCenter.y;
+
+            state.panX = initialPanState.x + deltaX;
+            state.panY = initialPanState.y + deltaY;
+
+            updateTransform();
+            return;
         }
 
+        // 1-Finger Pan
         if (state.isMobilePanMode && e.touches.length === 1) {
             e.preventDefault();
             e.stopPropagation(); // Stop flip engine
