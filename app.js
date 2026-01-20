@@ -1304,39 +1304,19 @@ function debounce(func, wait) {
 }
 
 function updateFlipGuides() {
-    const leftGuide = document.querySelector('.flip-guide-left');
     const rightGuide = document.querySelector('.flip-guide-right');
+    const rightTopGuide = document.querySelector('.flip-guide-right-top');
     const currentPage = state.currentPage; // 1-based index
 
-    if (leftGuide) {
-        // Hide left guide if on first page
-        if (currentPage === 1) leftGuide.classList.add('hidden');
-        else leftGuide.classList.remove('hidden', 'md:block'); // Ensure it respects md:block but removes hidden
-        // Actually, styles use md:block to show. 'hidden' overrides it.
-        // So toggle 'hidden' is enough.
-        // But wait, the HTML has `hidden md:block`.
-        // If I remove `hidden`, `md:block` takes over on desktop. Correct.
-    }
-
-    // Refined logic:
-    if (leftGuide) {
-        // Page 1: Hide
-        if (currentPage === 1) {
-            leftGuide.classList.add('hidden');
-        } else {
-            leftGuide.classList.remove('hidden');
-        }
-    }
+    // Hide guides if on the last page
+    const isLastPage = (currentPage >= state.totalPages);
 
     if (rightGuide) {
-        // Last page: Hide
-        // Note: In double page mode, totalPages might be odd/even.
-        // If we are at the very end, hide right guide.
-        if (currentPage >= state.totalPages) {
-            rightGuide.classList.add('hidden');
-        } else {
-            rightGuide.classList.remove('hidden');
-        }
+        rightGuide.classList.toggle('hidden', isLastPage);
+    }
+
+    if (rightTopGuide) {
+        rightTopGuide.classList.toggle('hidden', isLastPage);
     }
 }
 

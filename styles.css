@@ -772,29 +772,60 @@ body {
 /* Removed flip-guide-left styles */
 
 .flip-guide-right {
-    right: 0;
+    right: 5px;
+    /* Offset away from edge */
+    bottom: 5px;
+    /* Offset away from edge */
+}
+
+.flip-guide-right-top {
+    right: 5px;
+    /* Offset away from edge */
+    top: 5px;
+    /* Offset away from edge */
+    /* Rotate for top right? No, just style borders differently */
 }
 
 .flip-guide-right::before {
-    right: 0;
-    background: radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.7) 0%, transparent 70%);
-    border-bottom-right-radius: 4px;
-    animation: pulse-orange 2s infinite;
-    animation-delay: 1s;
+    right: -16px;
+    bottom: -16px;
+    background: transparent;
+    border-right: 4px solid rgba(255, 255, 255, 0.5);
+    border-bottom: 4px solid rgba(255, 255, 255, 0.5);
+    border-bottom-right-radius: 8px;
+    animation: pulse-wireframe 3s infinite ease-in-out;
+
+}
+
+.flip-guide-right-top::before {
+    content: '';
+    position: absolute;
+    top: -16px;
+    right: -16px;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    /* Minimalistic Wireframe Style - Top Right */
+    background: transparent;
+    border-right: 4px solid rgba(255, 255, 255, 0.5);
+    border-top: 4px solid rgba(255, 255, 255, 0.5);
+    border-top-right-radius: 8px;
+    animation: pulse-wireframe 3s infinite ease-in-out;
 }
 
 .guide-label {
     position: absolute;
     bottom: 20px;
     color: rgba(255, 255, 255, 0.95);
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 400;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     pointer-events: none;
     white-space: nowrap;
     opacity: 1;
     /* Explicitly opaque */
     letter-spacing: 0.5px;
+    text-decoration: underline dashed;
 }
 
 
@@ -802,24 +833,28 @@ body {
 .guide-label.right {
     right: 10px;
     transform-origin: bottom right;
-    transform: rotate(270deg) translate(90%, 150%);
-    /* Position along right edge going up */
+    transform: rotate(270deg) translate(86%, 246%)
+        /* Position along right edge going up */
 }
 
-@keyframes pulse-orange {
+@keyframes pulse-wireframe {
     0% {
-        opacity: 0.4;
-        transform: scale(0.9);
+        opacity: 0.3;
+        transform: scale(0.95);
+        border-color: rgba(255, 255, 255, 0.3);
     }
 
     50% {
         opacity: 0.8;
-        transform: scale(1.1);
+        transform: scale(1.05);
+        /* Gentle expansion */
+        border-color: rgba(255, 255, 255, 0.8);
     }
 
     100% {
-        opacity: 0.4;
-        transform: scale(1.2);
+        opacity: 0.3;
+        transform: scale(0.95);
+        border-color: rgba(255, 255, 255, 0.3);
     }
 }
 
