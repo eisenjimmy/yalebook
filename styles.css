@@ -236,6 +236,11 @@ body {
     margin: 0 auto !important;
 }
 
+/* Force absolute positioning on StPageFlip items to prevent .page rules from breaking layout */
+.stf__item {
+    position: absolute !important;
+}
+
 /* Center the single-page flipbook on mobile */
 @media (max-width: 768px) {
 
@@ -256,7 +261,6 @@ body {
     box-shadow:
         inset -15px 0 30px -10px rgba(0, 0, 0, 0.25),
         -3px 0 10px rgba(0, 0, 0, 0.1);
-    position: relative;
 }
 
 /* Crease effect on right edge of left page */
@@ -279,7 +283,6 @@ body {
     box-shadow:
         inset 15px 0 30px -10px rgba(0, 0, 0, 0.25),
         3px 0 10px rgba(0, 0, 0, 0.1);
-    position: relative;
 }
 
 /* Crease effect on left edge of right page */
