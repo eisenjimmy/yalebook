@@ -1368,6 +1368,11 @@ function setupMobileControls() {
     let lastTouchY = 0;
 
     const handleTouchStart = (e) => {
+        // Block multi-touch (pinch) from triggering flip
+        if (e.touches.length > 1) {
+            e.stopPropagation();
+        }
+
         if (state.isMobilePanMode && e.touches.length === 1) {
             e.stopPropagation(); // Stop flip engine
             lastTouchX = e.touches[0].clientX;
@@ -1376,6 +1381,11 @@ function setupMobileControls() {
     };
 
     const handleTouchMove = (e) => {
+        // Block multi-touch (pinch) from triggering flip
+        if (e.touches.length > 1) {
+            e.stopPropagation();
+        }
+
         if (state.isMobilePanMode && e.touches.length === 1) {
             e.preventDefault();
             e.stopPropagation(); // Stop flip engine
@@ -1393,7 +1403,14 @@ function setupMobileControls() {
     };
 
     const handleTouchEnd = (e) => {
+        // Block multi-touch end events if needed, though usually start/move is enough
         // Intercept touchend to prevent "tap to flip" or "swipe release" logic in the library
+        if (state.isMobilePanMode || e.touches.length > 0) { // e.touches is 0 on touchend usually, need changedTouches?
+            // Actually StPageFlip uses touchend to determine swipe result.
+            // If we stopped start/move, it might not have started a flip.
+            // But let's be safe.
+        }
+
         if (state.isMobilePanMode) {
             e.stopPropagation();
         }

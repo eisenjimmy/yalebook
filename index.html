@@ -95,7 +95,8 @@
             </div>
 
             <!-- Center: Search -->
-            <div class="hidden md:flex items-center gap-2 max-w-lg w-full mx-8">
+            <div id="search-container"
+                class="hidden md:flex items-center gap-2 bg-stone-800/50 rounded-xl px-2 border border-white/5 focus-within:border-amber-500/50 focus-within:bg-stone-800 transition-all flex-1 max-w-xs mx-4">
                 <div class="relative flex-1 group">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500 group-focus-within:text-amber-500 transition-colors"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,14 +151,14 @@
 
                 <div class="w-px h-8 bg-white/10 mx-1"></div>
 
-                <button id="btn-share" class="toolbar-btn" title="링크 공유">
+                <button id="btn-share" class="toolbar-btn hidden md:flex" title="링크 공유">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                     </svg>
                 </button>
 
-                <button id="btn-fullscreen" class="toolbar-btn" title="전체 화면">
+                <button id="btn-fullscreen" class="toolbar-btn hidden md:flex" title="전체 화면">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
