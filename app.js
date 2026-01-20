@@ -367,6 +367,129 @@ function createErrorPage(width, height) {
     return canvas;
 }
 
+// ============================================
+// High-Res Re-rendering Logic
+// ============================================
+
+let highResRenderTimeout = null;
+
+function triggerHighResRender() {
+    if (highResRenderTimeout) clearTimeout(highResRenderTimeout);
+
+    // Debounce to avoid rendering while still zooming
+    highResRenderTimeout = setTimeout(async () => {
+        // Only render if zoomed in
+        if (state.zoom > 1) {
+            // Determine which pages are visible
+            const visiblePages = [];
+
+            if (state.isDoublePageMode) {
+                // In double mode, we typically show 2 pages based on current spread
+                // Or simplified: just render current page(s)
+                // StPageFlip manages visibility but we know state.currentPage
+                // If page 1, show 1. If page 2-3, show 2 and 3.
+
+                // Logic depends on how StPageFlip reports currentPage. 
+                // Usually it reports the left page or the single page.
+
+                // We can query the DOM for visible pages or infer from indices
+                const current = state.currentPage; // e.g. 1, or 2 (meaning 2-3)
+
+                // If page 1 (cover)
+                if (current === 1) {
+                    visiblePages.push(1);
+                } else {
+                    // It's a spread.
+                    // If total pages is even, last page is single on right?
+                    // Usually: 1 (right), 2-3, 4-5...
+                    // Let's just try to render current and current+1 if valid
+                    visiblePages.push(current);
+                    if (current + 1 <= state.totalPages) visiblePages.push(current + 1);
+                    // Wait, if current is even (2), it means 2 is left, 3 is right?
+                    // StPageFlip: 
+                    // [1] -> index 0
+                    // [2,3] -> index 1 (pages 2 and 3)
+                    // If we are at page 2, we are seeing 2 and 3.
+                }
+            } else {
+                visiblePages.push(state.currentPage);
+            }
+
+            // Loop through visible pages and re-render
+            for (const pageNum of visiblePages) {
+                await renderPageHighRes(pageNum);
+            }
+        }
+    }, 300); // 300ms delay after interaction ends
+}
+
+async function renderPageHighRes(pageNum) {
+    if (pageNum < 1 || pageNum > state.totalPages) return;
+
+    try {
+        const page = await state.pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1 });
+
+        // Target dimensions based on base size + zoom + device pixel ratio
+        // state.basePageWidth is the display size at zoom 1
+        const zoomLevel = state.zoom;
+        const dpr = window.devicePixelRatio || 1;
+
+        // Calculate the exact pixel size needed for crisp rendering
+        // We want the canvas width to match the *screen pixels* occupied by the page
+        const targetWidth = state.basePageWidth * zoomLevel * dpr;
+        const targetHeight = state.basePageHeight * zoomLevel * dpr;
+
+        // Calculate scale needed to hit that target
+        const scale = targetWidth / viewport.width;
+
+        const renderViewport = page.getViewport({ scale: scale });
+
+        // Find existing page element
+        const pageElement = document.querySelector(`.page[data-page-num="${pageNum}"] .page-content`);
+        if (!pageElement) return;
+
+        // Check if we already have a high-res canvas here?
+        // Maybe store metadata on canvas?
+        // Let's just create new and swap.
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+
+        canvas.width = renderViewport.width;
+        canvas.height = renderViewport.height;
+
+        // Force Display size to match base layout (StPageFlip controls exact sizing via transform)
+        // But we need to ensure the canvas FITS inside the .page container
+        // .page has style.width = basePageWidth
+        // So canvas.style.width should be 100% of parent? 
+        // Or explicit basePageWidth?
+        // StPageFlip might scale the .page element itself?
+        // Actually, looking at Styles, .page-content usually fills .page
+
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        await page.render({
+            canvasContext: ctx,
+            viewport: renderViewport,
+            intent: 'display'
+        }).promise;
+
+        // Swap
+        pageElement.innerHTML = '';
+        pageElement.appendChild(canvas);
+
+        // console.log(`High-res rendered page ${pageNum} at scale ${scale.toFixed(2)}`);
+
+    } catch (e) {
+        console.error('High res render failed', e);
+    }
+}
+
 async function extractAllPageTexts() {
     for (let i = 1; i <= state.totalPages; i++) {
         try {
@@ -763,6 +886,7 @@ function setupZoomPanControls() {
         if (state.zoom !== newZoom) {
             state.zoom = newZoom;
             updateTransform();
+            triggerHighResRender();
         }
     }, { passive: false });
 
@@ -1085,6 +1209,7 @@ function zoomIn() {
     if (state.zoom < state.maxZoom) {
         state.zoom = Math.min(state.zoom + 0.25, state.maxZoom);
         updateTransform();
+        triggerHighResRender();
     }
 }
 
@@ -1092,6 +1217,7 @@ function zoomOut() {
     if (state.zoom > state.minZoom) {
         state.zoom = Math.max(state.zoom - 0.25, state.minZoom);
         updateTransform();
+        triggerHighResRender();
     }
 }
 
@@ -1099,7 +1225,9 @@ function resetZoom() {
     state.zoom = 1;
     state.panX = 0;
     state.panY = 0;
+    state.panY = 0;
     updateTransform();
+    // No need to high-res render on reset (zoom 1), but good practice to clear if needed
 }
 
 // ============================================
@@ -1459,6 +1587,11 @@ function setupMobileControls() {
 
         if (state.isMobilePanMode) {
             e.stopPropagation();
+        }
+
+        // Trigger high-res re-render after pinch
+        if (state.zoom > 1) {
+            triggerHighResRender();
         }
     };
 
