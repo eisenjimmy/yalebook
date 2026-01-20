@@ -50,6 +50,7 @@ body {
     background-color: #0f0f0f;
     position: relative;
     overflow: hidden;
+    cursor: grab;
 }
 
 /* Premium overlay to darken background for UI contrast */
@@ -71,6 +72,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
 /* Flipbook Container - StPageFlip handles centering */
@@ -91,6 +93,7 @@ body {
     pointer-events: none;
     display: none;
     background: transparent;
+
 }
 
 .page-underneath canvas {

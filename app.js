@@ -782,7 +782,7 @@ function setupZoomPanControls() {
         if (e.button === 2 && isPanning) {
             e.stopPropagation();
             isPanning = false;
-            magazineContainer.style.cursor = state.zoom > 1 ? 'grab' : 'default';
+            magazineContainer.style.cursor = 'grab';
         }
     }, true);
 
@@ -798,7 +798,7 @@ function setupZoomPanControls() {
     document.addEventListener('mouseup', (e) => {
         if (e.button === 2 && isPanning) {
             isPanning = false;
-            magazineContainer.style.cursor = state.zoom > 1 ? 'grab' : 'default';
+            magazineContainer.style.cursor = 'grab';
         }
     });
 
