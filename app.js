@@ -262,6 +262,10 @@ async function loadPdf(file) {
         // Initialize flipbook
         await initFlipbook();
 
+        // Pre-render all pages to ensure smooth flipping
+        showLoading('Rendering pages...');
+        await preRenderAllPages();
+
         // Show viewer
         elements.uploadScreen.classList.add('hidden');
         elements.viewerContainer.classList.remove('hidden');
@@ -473,7 +477,7 @@ async function initFlipbook() {
         maxWidth: pageWidth * 2, // Allow some flexibility
         minHeight: 280,
         maxHeight: pageHeight * 2,
-        showCover: false, // Disable cover mode to show pages in pairs
+        showCover: true, // Enable cover mode for proper magazine pagination
         mobileScrollSupport: true,
         // swipeDistance should be relative to page width
         swipeDistance: state.isDoublePageMode ? pageWidth / 2 : pageWidth / 4,
@@ -500,6 +504,75 @@ async function initFlipbook() {
         renderVisiblePages();
         updateCoverState();
     });
+
+    // Pre-render upcoming pages when flip starts and show page underneath
+    state.pageFlip.on('changeState', (e) => {
+        if (e.data === 'flipping' || e.data === 'user_fold' || e.data === 'fold_corner') {
+            // When flipping starts, show the next page underneath
+            const currentIndex = state.pageFlip.getCurrentPageIndex();
+
+            // In double-page mode with showCover:true
+            // currentIndex 0 = cover (page 1), currentIndex 1 = pages 2-3, etc.
+            // The next right page would be currentIndex + 2 pages ahead
+            if (state.isDoublePageMode) {
+                showPageUnderneath(currentIndex);
+            }
+
+            // Pre-render up to 6 pages ahead
+            const nextPages = [];
+            for (let i = 1; i <= 6; i++) {
+                const pageNum = currentIndex + 1 + i;
+                if (pageNum >= 1 && pageNum <= state.totalPages) {
+                    nextPages.push(pageNum);
+                }
+            }
+            nextPages.forEach(pageNum => renderPageContent(pageNum));
+        }
+
+        if (e.data === 'read') {
+            // Hide the underneath page when flip completes
+            hidePageUnderneath();
+        }
+    });
+
+    function showPageUnderneath(currentIndex) {
+        // Calculate the next right-side page number
+        // With showCover: true, page ordering is: [1], [2,3], [4,5], [6,7]...
+        // Next right page from [2,3] would be 5, from [4,5] would be 7
+        const nextRightPageNum = currentIndex * 2 + 3; // Approximation for spread layout
+
+        if (nextRightPageNum > state.totalPages) return;
+
+        // Find or create the underneath preview element
+        let underneathEl = document.getElementById('page-underneath');
+        if (!underneathEl) {
+            underneathEl = document.createElement('div');
+            underneathEl.id = 'page-underneath';
+            underneathEl.className = 'page-underneath';
+            const magazineContainer = document.getElementById('magazine-container');
+            magazineContainer.appendChild(underneathEl);
+        }
+
+        // Get the next page's canvas content
+        const nextPageEl = document.querySelector(`.page[data-page-num="${nextRightPageNum}"]`);
+        if (nextPageEl) {
+            const canvas = nextPageEl.querySelector('canvas');
+            if (canvas) {
+                underneathEl.innerHTML = '';
+                const clonedCanvas = canvas.cloneNode(true);
+                clonedCanvas.getContext('2d').drawImage(canvas, 0, 0);
+                underneathEl.appendChild(clonedCanvas);
+                underneathEl.style.display = 'block';
+            }
+        }
+    }
+
+    function hidePageUnderneath() {
+        const underneathEl = document.getElementById('page-underneath');
+        if (underneathEl) {
+            underneathEl.style.display = 'none';
+        }
+    }
 
     state.pageFlip.on('changeOrientation', () => {
         updateCreaseVisibility();
@@ -531,8 +604,9 @@ async function renderVisiblePages() {
         }
     }
 
-    // Preload nearby pages
-    for (let i = -2; i <= 2; i++) {
+    // Preload nearby pages - extend further for double-page mode
+    const preloadRange = state.isDoublePageMode ? 4 : 2;
+    for (let i = -2; i <= preloadRange; i++) {
         const pageNum = currentIndex + 1 + i;
         if (pageNum >= 1 && pageNum <= state.totalPages) {
             pagesToRender.add(pageNum);
@@ -543,6 +617,15 @@ async function renderVisiblePages() {
     for (const pageNum of pagesToRender) {
         await renderPageContent(pageNum);
     }
+}
+
+// Pre-render all pages for smooth flipping
+async function preRenderAllPages() {
+    const renderPromises = [];
+    for (let pageNum = 1; pageNum <= state.totalPages; pageNum++) {
+        renderPromises.push(renderPageContent(pageNum));
+    }
+    await Promise.all(renderPromises);
 }
 
 async function renderPageContent(pageNum) {
@@ -615,16 +698,32 @@ async function addTextLayer(pageNum, container, width, height) {
 
 function setupZoomAndPan() {
     const magazineContainer = document.getElementById('magazine-container');
+    const woodenTable = document.querySelector('.wooden-table');
     let isPanning = false;
     let startX, startY;
     let currentX = 0, currentY = 0;
     let currentZoom = 1;
 
+    // Suppress context menu globally on the viewer
+    document.addEventListener('contextmenu', (e) => {
+        if (woodenTable && woodenTable.contains(e.target)) {
+            e.preventDefault();
+        }
+    });
+
+    // Prevent right-click from triggering anything in flipbook
+    elements.flipbook.addEventListener('mousedown', (e) => {
+        if (e.button === 2) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, true);
+
     // Mouse wheel zoom
-    magazineContainer.addEventListener('wheel', (e) => {
+    woodenTable.addEventListener('wheel', (e) => {
         e.preventDefault();
 
-        const zoomSpeed = 0.1;
+        const zoomSpeed = 0.15;
         const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
         const newZoom = Math.min(Math.max(currentZoom + delta, 0.5), 3);
 
@@ -632,14 +731,15 @@ function setupZoomAndPan() {
         applyTransform();
     }, { passive: false });
 
-    // Right-click drag to pan
-    magazineContainer.addEventListener('mousedown', (e) => {
-        if (e.button === 2 && currentZoom > 1) { // Right mouse button
+    // Right-click drag to pan (on wooden table area)
+    woodenTable.addEventListener('mousedown', (e) => {
+        if (e.button === 2) { // Right mouse button
             isPanning = true;
             startX = e.clientX - currentX;
             startY = e.clientY - currentY;
             magazineContainer.style.cursor = 'grabbing';
             e.preventDefault();
+            e.stopPropagation();
         }
     });
 
@@ -658,12 +758,32 @@ function setupZoomAndPan() {
         }
     });
 
-    // Prevent context menu on right-click in magazine area
-    magazineContainer.addEventListener('contextmenu', (e) => {
-        if (currentZoom > 1) {
-            e.preventDefault();
+    // Mobile pinch-zoom support
+    let initialDistance = 0;
+    let initialZoom = 1;
+
+    magazineContainer.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            initialDistance = getDistance(e.touches[0], e.touches[1]);
+            initialZoom = currentZoom;
         }
-    });
+    }, { passive: true });
+
+    magazineContainer.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const distance = getDistance(e.touches[0], e.touches[1]);
+            const scale = distance / initialDistance;
+            currentZoom = Math.min(Math.max(initialZoom * scale, 0.5), 3);
+            applyTransform();
+        }
+    }, { passive: false });
+
+    function getDistance(touch1, touch2) {
+        const dx = touch1.clientX - touch2.clientX;
+        const dy = touch1.clientY - touch2.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
 
     // Double-click to toggle zoom
     let lastTap = 0;
@@ -671,6 +791,7 @@ function setupZoomAndPan() {
 
     // Touch double-tap support
     elements.flipbook.addEventListener('touchend', (e) => {
+        if (e.touches.length > 0) return; // Ignore if still touching
         const currentTime = new Date().getTime();
         const tapLength = currentTime - lastTap;
 
@@ -1030,12 +1151,19 @@ function handleResize() {
             initFlipbook();
             updateCreaseVisibility();
         } else {
-            // Just recalculate dimensions and update using viewer container
+            // StPageFlip doesn't have updatePageSize - reinitialize for size changes
+            // Only reinitialize if size changed significantly
             const viewerContainer = document.getElementById('viewer-container');
             const toolbarHeight = 72;
-            const width = (viewerContainer ? viewerContainer.clientWidth : window.innerWidth) - 40;
-            const height = (viewerContainer ? viewerContainer.clientHeight : window.innerHeight) - toolbarHeight - 40;
-            state.pageFlip.updatePageSize(width, height);
+            const newWidth = (viewerContainer ? viewerContainer.clientWidth : window.innerWidth) - 40;
+            const newHeight = (viewerContainer ? viewerContainer.clientHeight : window.innerHeight) - toolbarHeight - 40;
+
+            // Check if significant size change
+            const aspectRatio = state.basePageWidth / state.basePageHeight;
+            const expectedWidth = state.isDoublePageMode ? newWidth / 2 : newWidth;
+            if (Math.abs(expectedWidth - state.basePageWidth) > 50) {
+                initFlipbook();
+            }
         }
     }
 }

@@ -80,6 +80,32 @@ body {
     height: 100%;
 }
 
+/* Page underneath - shows next page during flip animation (desktop only) */
+.page-underneath {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    display: none;
+    background: transparent;
+}
+
+.page-underneath canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Hide page-underneath on mobile */
+@media (max-width: 768px) {
+    .page-underneath {
+        display: none !important;
+    }
+}
+
 /* Page Styles */
 .page {
     background: #fff;
@@ -209,29 +235,14 @@ body {
 
 /* Center the single-page flipbook on mobile */
 @media (max-width: 768px) {
+
+    /* Let the wooden-table flex container handle centering */
     .stf__wrapper {
         margin: 0 auto !important;
-        position: relative !important;
     }
 
-    /* Override StPageFlip's default positioning for single page mode */
-    .stf__parent {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 100% !important;
-        position: relative !important;
-    }
-
-    /* Center the block container - fix flip origin */
     .stf__block {
         margin: 0 auto !important;
-        position: relative !important;
-    }
-
-    /* Ensure page elements are properly positioned for flip animation */
-    .stf__item {
-        transform-origin: center center !important;
     }
 }
 
@@ -633,10 +644,25 @@ body {
         height: 36px;
     }
 
-    .flipbook {
-        /* Removed transform scaling - using proper size calculation instead */
-        transform-origin: center top;
+    /* Fix mobile wooden-table centering */
+    .wooden-table {
+        padding-top: 56px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 100vh;
     }
+
+    /* Fix magazine wrapper for proper vertical centering */
+    .magazine-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: auto;
+        max-height: calc(100vh - 56px);
+    }
+
+    /* flipbook: No transform needed - StPageFlip handles sizing */
 
     /* Hide crease on mobile (single-page mode) */
     .crease-overlay {
