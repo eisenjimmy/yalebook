@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.784370">
+  <PropertyGroup>
+    <StartupCommand>npx -y http-server . -p 8082 -o</StartupCommand>
+    <JavaScriptTestRoot>.\</JavaScriptTestRoot>
+    <PublishAssetsDirectory>$(MSBuildProjectDirectory)\</PublishAssetsDirectory>
+    <BuildOutputFolder>$(MSBuildProjectDirectory)\</BuildOutputFolder>
+    <ShouldRunNpmInstall>false</ShouldRunNpmInstall>
+    <ProjectGuid>B7F5B8C1-1234-5678-ABCD-123456789ABC</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="index.html" />
+    <None Include="app.js" />
+    <None Include="styles.css" />
+    <Folder Include="library\" />
+    <Folder Include="Properties\" />
+  </ItemGroup>
+</Project>

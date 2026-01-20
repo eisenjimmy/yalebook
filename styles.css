@@ -1,0 +1,712 @@
+/* ===========================================
+   PDF Magazine Viewer - Premium Styles
+   =========================================== */
+
+/* CSS Variables - Premium Theme */
+:root {
+    --toolbar-height: 72px;
+    --page-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.6);
+    --accent-color: #f59e0b;
+    --accent-glow: 0 0 20px rgba(245, 158, 11, 0.4);
+    --glass-bg: rgba(22, 22, 22, 0.6);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+    --glass-backdrop: blur(16px) saturate(180%);
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+
+    /* Crease gradient for center spine effect */
+    --crease-gradient: linear-gradient(to right,
+            transparent 0%,
+            rgba(0, 0, 0, 0.15) 30%,
+            rgba(0, 0, 0, 0.3) 50%,
+            rgba(0, 0, 0, 0.15) 70%,
+            transparent 100%);
+
+    /* Animation Curves */
+    --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* Base Styles */
+* {
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #0f0f0f;
+    color: var(--text-primary);
+}
+
+/* Premium Dynamic Background */
+.wooden-table {
+    background: url('./library/background.jpg') center center / cover no-repeat;
+    background-color: #0f0f0f;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Premium overlay to darken background for UI contrast */
+.wooden-table::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.85) 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Magazine Wrapper - centered container for flipbook */
+.magazine-wrapper {
+    perspective: 2500px;
+    transform-style: preserve-3d;
+    z-index: 10;
+    transition: transform 0.6s var(--ease-out-expo);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Flipbook Container - StPageFlip handles centering */
+.flipbook {
+    overflow: visible;
+    width: 100%;
+    height: 100%;
+}
+
+/* Page Styles */
+.page {
+    background: #fff;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Page Backside - mirrored content visible through paper (single-page mode only) */
+.page-backside {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: scaleX(-1);
+    backface-visibility: hidden;
+    z-index: 1;
+    pointer-events: none;
+    background: #fff;
+    overflow: hidden;
+}
+
+/* Whitewash overlay on backside to simulate paper opacity */
+.page-backside::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.75);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.page-backside canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Show backside when page is being flipped */
+.page.--flipping .page-backside {
+    backface-visibility: visible;
+}
+
+.page-content {
+    width: 100%;
+    height: 100%;
+    display: block;
+    /* changed from flex */
+    background: #fff;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    z-index: 2;
+}
+
+/* Crease overlay on page content - appears on spine side */
+.page-content::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Left page crease - on right edge */
+.page.--left .page-content::after {
+    right: 0;
+    background: linear-gradient(to left,
+            rgba(0, 0, 0, 0.12) 0%,
+            rgba(0, 0, 0, 0.06) 40%,
+            transparent 100%);
+}
+
+/* Right page crease - on left edge */
+.page.--right .page-content::after {
+    left: 0;
+    background: linear-gradient(to right,
+            rgba(0, 0, 0, 0.12) 0%,
+            rgba(0, 0, 0, 0.06) 40%,
+            transparent 100%);
+}
+
+.page-content canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: fill;
+    /* Ensure it fills exactly */
+}
+
+/* Text layer for search highlighting */
+.text-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.text-layer span {
+    position: absolute;
+    white-space: pre;
+    color: transparent;
+    pointer-events: auto;
+    cursor: text;
+}
+
+/* Search highlight - yellow background */
+.text-layer span.highlight {
+    background-color: rgba(255, 255, 0, 0.5);
+    border-radius: 2px;
+    padding: 0 2px;
+    margin: -1px -2px;
+}
+
+/* StPageFlip Wrapper Styling */
+.stf__wrapper {
+    perspective: 2000px !important;
+    margin: 0 auto !important;
+}
+
+/* Center the single-page flipbook on mobile */
+@media (max-width: 768px) {
+    .stf__wrapper {
+        margin: 0 auto !important;
+        position: relative !important;
+    }
+
+    /* Override StPageFlip's default positioning for single page mode */
+    .stf__parent {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        position: relative !important;
+    }
+
+    /* Center the block container - fix flip origin */
+    .stf__block {
+        margin: 0 auto !important;
+        position: relative !important;
+    }
+
+    /* Ensure page elements are properly positioned for flip animation */
+    .stf__item {
+        transform-origin: center center !important;
+    }
+}
+
+/* Simple page flip styling */
+
+/* Left side page - shadow on spine side (right edge of left page) */
+.stf__wrapper .stf__page--left.stf__page--soft {
+    box-shadow:
+        inset -15px 0 30px -10px rgba(0, 0, 0, 0.25),
+        -3px 0 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+/* Crease effect on right edge of left page */
+.stf__wrapper .stf__page--left.stf__page--soft::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 30px;
+    height: 100%;
+    background: linear-gradient(to left,
+            rgba(0, 0, 0, 0.15) 0%,
+            rgba(0, 0, 0, 0.08) 30%,
+            transparent 100%);
+    pointer-events: none;
+}
+
+/* Right side page - shadow on spine side (left edge of right page) */
+.stf__wrapper .stf__page--right.stf__page--soft {
+    box-shadow:
+        inset 15px 0 30px -10px rgba(0, 0, 0, 0.25),
+        3px 0 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+/* Crease effect on left edge of right page */
+.stf__wrapper .stf__page--right.stf__page--soft::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 30px;
+    height: 100%;
+    background: linear-gradient(to right,
+            rgba(0, 0, 0, 0.15) 0%,
+            rgba(0, 0, 0, 0.08) 30%,
+            transparent 100%);
+    pointer-events: none;
+}
+
+/* Page corner hover effect */
+.stf__corner {
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.3) 0%,
+            rgba(255, 255, 255, 0.1) 100%) !important;
+}
+
+/* Enhanced cover styling - first page as book cover */
+.stf__wrapper .stf__page:first-child {
+    box-shadow:
+        -5px 5px 20px rgba(0, 0, 0, 0.4),
+        0 0 50px rgba(0, 0, 0, 0.2);
+}
+
+/* Cover page special styling */
+.stf__wrapper .stf__hard {
+    background: linear-gradient(145deg, #2c2c2c 0%, #1a1a1a 100%);
+    box-shadow:
+        inset 2px 0 8px rgba(255, 255, 255, 0.05),
+        -4px 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* Hard Cover Styles */
+.page.hard {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+}
+
+/* Hide left side empty placeholder on front cover (first page) */
+.stf__wrapper[data-at-cover="front"] .stf__block--left {
+    display: none !important;
+}
+
+/* Hide right side empty placeholder on back cover (last page) */
+.stf__wrapper[data-at-cover="back"] .stf__block--right {
+    display: none !important;
+}
+
+/* Remove shadow from flipbook when on cover pages */
+.stf__wrapper[data-at-cover="front"]~.flipbook,
+.stf__wrapper[data-at-cover] {
+    box-shadow: none !important;
+}
+
+/* Cover page overlay effect - subtle leather/matte texture */
+.page.cover-page .page-content {
+    position: relative;
+}
+
+/* Center Crease Overlay - DEPRECATED: Now using per-page creases via ::after pseudo-elements */
+.crease-overlay {
+    display: none;
+}
+
+.crease-overlay::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.2);
+    transform: translateX(-50%);
+}
+
+/* Single Page Mode Styling - handled by StPageFlip usePortrait */
+
+/* Glassmorphism Toolbar */
+.toolbar {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border-bottom: var(--glass-border);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    height: var(--toolbar-height);
+    transition: all 0.4s var(--ease-out-expo);
+}
+
+.toolbar:hover {
+    background: rgba(22, 22, 22, 0.8);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Premium Toolbar Buttons */
+.toolbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.toolbar-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.toolbar-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.toolbar-btn:hover::before {
+    opacity: 1;
+}
+
+.toolbar-btn:active {
+    transform: scale(0.92);
+}
+
+.toolbar-btn svg {
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toolbar-btn:hover svg {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+}
+
+/* Primary Action Buttons (Zoom, Share) */
+#btn-share:hover,
+#btn-fullscreen:hover {
+    color: var(--accent-color);
+    border-color: rgba(245, 158, 11, 0.2);
+    box-shadow: var(--accent-glow);
+}
+
+#btn-share:hover svg,
+#btn-fullscreen:hover svg {
+    filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.6));
+}
+
+/* Small Toolbar Buttons */
+.toolbar-btn-sm {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toolbar-btn-sm:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Upload Screen Animations */
+.upload-container {
+    animation: fadeInUp 0.8s var(--ease-out-expo);
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.upload-icon {
+    animation: float 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.3));
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-12px) rotate(2deg);
+    }
+}
+
+/* Drag and Drop Highlight */
+.upload-container.drag-over {
+    border-color: rgba(245, 158, 11, 0.5);
+    background: rgba(245, 158, 11, 0.05);
+    transform: scale(1.02);
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.2);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    animation: spin 0.8s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+    margin: 0 auto;
+    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.4));
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Toast Notification */
+#toast.show {
+    opacity: 1;
+    transform: translate(-50%, 0) translateY(0);
+    pointer-events: auto;
+    background: rgba(20, 20, 20, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+
+/* Search Input Styling */
+#search-input {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+}
+
+#search-input:focus {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.3);
+}
+
+/* Page Number Input */
+#page-input {
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+#page-input:focus {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: var(--accent-color);
+}
+
+#page-input::-webkit-outer-spin-button,
+#page-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#page-input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* Floating Navigation Buttons */
+.nav-btn-floating {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.4s var(--ease-out-expo);
+    z-index: 100;
+    opacity: 0;
+    /* Hidden by default, shown on container hover */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.magazine-wrapper:hover .nav-btn-floating {
+    opacity: 1;
+}
+
+.nav-btn-floating.prev {
+    left: 40px;
+}
+
+.nav-btn-floating.next {
+    right: 40px;
+}
+
+.nav-btn-floating:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--accent-color);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+    transform: translateY(-50%) scale(1.1);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.nav-btn-floating:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* Mobile Search Button */
+.mobile-search-btn {
+    display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+
+    /* Hide floating nav on mobile */
+    .nav-btn-floating {
+        display: none !important;
+    }
+
+    :root {
+        --toolbar-height: 56px;
+    }
+
+    .toolbar-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .flipbook {
+        /* Removed transform scaling - using proper size calculation instead */
+        transform-origin: center top;
+    }
+
+    /* Hide crease on mobile (single-page mode) */
+    .crease-overlay {
+        display: none !important;
+    }
+
+    /* Hide view mode toggle on mobile (forced single-page) */
+    #btn-view-mode {
+        display: none !important;
+    }
+
+    /* Single-page mode on mobile - handled by StPageFlip usePortrait */
+
+    /* Hide search on mobile, show search button instead */
+    .mobile-search-btn {
+        display: flex;
+    }
+}
+
+@media (max-width: 480px) {
+    .flipbook {
+        /* Removed transform scaling - prevents flip animation positioning issues */
+        transform-origin: center top;
+    }
+
+    .magazine-wrapper {
+        perspective: 1200px;
+    }
+}
+
+/* High DPI Screen Adjustments */
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+    .page-content canvas {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+
+/* Dark Mode Enhancements */
+@media (prefers-color-scheme: dark) {
+    .page {
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+}
+
+/* Focus States for Accessibility */
+.toolbar-btn:focus-visible,
+.toolbar-btn-sm:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 2px;
+}
+
+#search-input:focus-visible,
+#page-input:focus-visible {
+    outline: 2px solid #f59e0b;
+    outline-offset: 1px;
+}
+
+/* Print Styles - Hide UI */
+@media print {
+
+    .toolbar,
+    #upload-screen,
+    #toast,
+    .crease-overlay {
+        display: none !important;
+    }
+
+    .wooden-table {
+        background: white !important;
+    }
+}

@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "yalebook": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "http://localhost:8082",
+      "environmentVariables": {
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}
