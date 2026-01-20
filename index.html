@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <meta name="description" content="뉴욕예일장로교회 - 전자책. 아름다운 페이지 넘김 효과로 경험하는 디지털 매거진">
-    <title>뉴욕예일장로교회 - 전자책</title>
+    <meta name="description" content="뉴욕예일장로교회 - 디지털 매거진. 아름다운 페이지 넘김 효과로 경험하는 디지털 매거진">
+    <title>뉴욕예일장로교회 - 디지털 매거진</title>
 
     <!-- Tailwind CSS v3 -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -48,8 +48,8 @@
                         d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
             </div>
-            <h1 class="text-3xl font-light text-white mb-3">뉴욕예일장로교회 - 전자책</h1>
-            <p class="text-stone-400 mb-8">뉴욕예일장로교회 전자책 뷰어입니다</p>
+            <h1 class="text-3xl font-light text-white mb-3">뉴욕예일장로교회 - 디지털 매거진</h1>
+            <p class="text-stone-400 mb-8">뉴욕예일장로교회 디지털 매거진 뷰어입니다</p>
 
             <label
                 class="upload-btn group cursor-pointer inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-medium rounded-xl transition-all duration-300 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-105">
@@ -57,23 +57,23 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
-                <span>Upload PDF</span>
+                <span>PDF 업로드</span>
                 <input type="file" id="pdf-upload" accept=".pdf" class="hidden">
             </label>
 
-            <p class="text-stone-500 text-sm mt-6">or drag and drop your PDF here</p>
+            <p class="text-stone-500 text-sm mt-6">또는 여기에 PDF를 드래그 앤 드롭하세요</p>
         </div>
     </div>
 
     <!-- Main Viewer -->
     <div id="viewer-container" class="hidden fixed inset-0 flex flex-col">
         <!-- Floating Navigation -->
-        <button class="nav-btn-floating prev" id="btn-prev-float" title="Previous Page">
+        <button class="nav-btn-floating prev" id="btn-prev-float" title="이전 페이지">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
         </button>
-        <button class="nav-btn-floating next" id="btn-next-float" title="Next Page">
+        <button class="nav-btn-floating next" id="btn-next-float" title="다음 페이지">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
@@ -102,15 +102,15 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    <input type="text" id="search-input" placeholder="Search in PDF..."
+                    <input type="text" id="search-input" placeholder="내용 검색..."
                         class="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm focus:outline-none transition-all placeholder-stone-600">
                 </div>
-                <button id="btn-search-prev" class="toolbar-btn-sm" title="Previous Match">
+                <button id="btn-search-prev" class="toolbar-btn-sm" title="이전 결과">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                     </svg>
                 </button>
-                <button id="btn-search-next" class="toolbar-btn-sm" title="Next Match">
+                <button id="btn-search-next" class="toolbar-btn-sm" title="다음 결과">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
@@ -120,7 +120,7 @@
 
             <!-- Right: Actions -->
             <div class="flex items-center gap-2">
-                <button id="btn-view-mode" class="toolbar-btn" title="Toggle View Mode">
+                <button id="btn-view-mode" class="toolbar-btn" title="보기 모드 전환">
                     <svg id="icon-single" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -133,14 +133,15 @@
 
                 <div class="w-px h-8 bg-white/10 mx-1"></div>
 
-                <button id="btn-zoom-out" class="toolbar-btn" title="Zoom Out">
+                <button id="btn-zoom-out" class="toolbar-btn" title="축소">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
                     </svg>
                 </button>
 
-                <button id="btn-zoom-in" class="toolbar-btn" title="Zoom In">
+
+                <button id="btn-zoom-in" class="toolbar-btn" title="확대">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
@@ -149,14 +150,14 @@
 
                 <div class="w-px h-8 bg-white/10 mx-1"></div>
 
-                <button id="btn-share" class="toolbar-btn" title="Share Link">
+                <button id="btn-share" class="toolbar-btn" title="링크 공유">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                     </svg>
                 </button>
 
-                <button id="btn-fullscreen" class="toolbar-btn" title="Fullscreen">
+                <button id="btn-fullscreen" class="toolbar-btn" title="전체 화면">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
@@ -176,9 +177,6 @@
                 <div id="crease-overlay" class="crease-overlay hidden"></div>
 
                 <!-- Desktop Flip Guides -->
-                <div class="flip-guide flip-guide-left hidden md:block">
-                    <span class="guide-label left">여기를 잡아서 페이지를 넘기세요</span>
-                </div>
                 <div class="flip-guide flip-guide-right hidden md:block">
                     <span class="guide-label right">여기를 잡아서 페이지를 넘기세요</span>
                 </div>
@@ -195,8 +193,7 @@
     <!-- Mobile Controls (Bottom Bar) -->
     <div id="mobile-controls"
         class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-6 py-3 bg-stone-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl">
-        <button id="mob-prev" class="p-3 text-white hover:text-amber-500 active:scale-95 transition-all"
-            title="Previous Page">
+        <button id="mob-prev" class="p-3 text-white hover:text-amber-500 active:scale-95 transition-all" title="이전 페이지">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
@@ -205,8 +202,7 @@
         <div class="w-px h-6 bg-white/10"></div>
 
         <button id="mob-pan-toggle"
-            class="p-3 text-white hover:text-amber-500 active:scale-95 transition-all rounded-xl"
-            title="Toggle Pan Mode">
+            class="p-3 text-white hover:text-amber-500 active:scale-95 transition-all rounded-xl" title="이동 모드 전환">
             <svg id="icon-pan-off" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
@@ -220,8 +216,7 @@
 
         <div class="w-px h-6 bg-white/10"></div>
 
-        <button id="mob-next" class="p-3 text-white hover:text-amber-500 active:scale-95 transition-all"
-            title="Next Page">
+        <button id="mob-next" class="p-3 text-white hover:text-amber-500 active:scale-95 transition-all" title="다음 페이지">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
@@ -232,7 +227,7 @@
     <div id="loading-overlay" class="fixed inset-0 z-[100] bg-stone-900/95 flex items-center justify-center hidden">
         <div class="text-center">
             <div class="loading-spinner mb-4"></div>
-            <p class="text-stone-400" id="loading-text">Loading PDF...</p>
+            <p class="text-stone-400" id="loading-text">PDF 로딩 중...</p>
         </div>
     </div>
 

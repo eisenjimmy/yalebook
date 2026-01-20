@@ -749,24 +749,35 @@ body {
 .flip-guide {
     position: absolute;
     bottom: 0;
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     pointer-events: none;
     z-index: 20;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    /* Removed opacity/transition from container so text stays visible */
 }
 
-.flip-guide-left {
-    left: 0;
-    background: radial-gradient(circle at bottom left, rgba(245, 158, 11, 0.6) 0%, transparent 70%);
-    border-bottom-left-radius: 4px;
-    animation: pulse-orange 2s infinite;
+/* Use pseudo-elements for the pulsing background so text doesn't pulse */
+.flip-guide-left::before,
+.flip-guide-right::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
 }
+
+
+
+/* Removed flip-guide-left styles */
 
 .flip-guide-right {
     right: 0;
-    background: radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.6) 0%, transparent 70%);
+}
+
+.flip-guide-right::before {
+    right: 0;
+    background: radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.7) 0%, transparent 70%);
     border-bottom-right-radius: 4px;
     animation: pulse-orange 2s infinite;
     animation-delay: 1s;
@@ -774,39 +785,40 @@ body {
 
 .guide-label {
     position: absolute;
-    bottom: -30px;
-    width: 200px;
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 13px;
+    bottom: 20px;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 14px;
     font-weight: 500;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
     pointer-events: none;
-    opacity: 0.8;
+    white-space: nowrap;
+    opacity: 1;
+    /* Explicitly opaque */
+    letter-spacing: 0.5px;
 }
 
-.guide-label.left {
-    left: 0;
-    text-align: left;
-}
+
 
 .guide-label.right {
-    right: 0;
-    text-align: right;
+    right: 10px;
+    transform-origin: bottom right;
+    transform: rotate(270deg) translate(90%, 150%);
+    /* Position along right edge going up */
 }
 
 @keyframes pulse-orange {
     0% {
-        opacity: 0.3;
+        opacity: 0.4;
         transform: scale(0.9);
     }
 
     50% {
-        opacity: 1;
+        opacity: 0.8;
         transform: scale(1.1);
     }
 
     100% {
-        opacity: 0.3;
+        opacity: 0.4;
         transform: scale(1.2);
     }
 }

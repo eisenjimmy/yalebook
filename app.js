@@ -102,7 +102,7 @@ function checkMobileMode() {
 }
 
 async function loadPdfFromUrl(url) {
-    showLoading('Loading PDF...');
+    showLoading('PDF 로딩 중...');
 
     try {
         const response = await fetch(url);
@@ -117,7 +117,7 @@ async function loadPdfFromUrl(url) {
         elements.pageInput.max = state.totalPages;
 
         // Extract text for search
-        showLoading('Preparing pages...');
+        showLoading('페이지 준비 중...');
         await extractAllPageTexts();
 
         // Show viewer BEFORE initializing flipbook so it can measure dimensions
@@ -135,7 +135,7 @@ async function loadPdfFromUrl(url) {
         await initFlipbook();
 
         // Pre-render all pages to ensure smooth flipping
-        showLoading('Rendering pages...');
+        showLoading('페이지 렌더링 중...');
         await preRenderAllPages();
 
         // Update crease visibility
@@ -147,7 +147,7 @@ async function loadPdfFromUrl(url) {
     } catch (error) {
         console.error('Error loading PDF:', error);
         hideLoading();
-        showToast('Error loading PDF.');
+        showToast('PDF 로딩 오류.');
     }
 }
 
@@ -979,7 +979,7 @@ function handleSearch() {
         setTimeout(() => highlightSearchMatches(query), 100);
     } else {
         state.currentSearchIndex = -1;
-        elements.searchResults.textContent = 'No results';
+        elements.searchResults.textContent = '결과 없음';
     }
 }
 
@@ -1023,7 +1023,7 @@ function goToPrevSearchResult() {
 
 function updateSearchIndicator() {
     if (state.searchResults.length > 0) {
-        elements.searchResults.textContent = `${state.currentSearchIndex + 1} of ${state.searchResults.length}`;
+        elements.searchResults.textContent = `${state.currentSearchIndex + 1} / ${state.searchResults.length}`;
     }
 }
 
@@ -1034,7 +1034,7 @@ function updateSearchIndicator() {
 function toggleViewMode() {
     // Prevent switching to double-page mode on mobile
     if (state.isMobile && !state.isDoublePageMode) {
-        showToast('Double-page mode not available on mobile');
+        showToast('모바일에서는 양면 보기를 지원하지 않습니다');
         return;
     }
 
@@ -1110,7 +1110,7 @@ function toggleFullscreen() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => {
             console.error('Error entering fullscreen:', err);
-            showToast('Fullscreen not available');
+            showToast('전체 화면을 사용할 수 없습니다');
         });
     } else {
         document.exitFullscreen();
@@ -1122,7 +1122,7 @@ function handleFullscreenChange() {
 
     // Update button icon (could toggle between expand/compress icons)
     if (state.isFullscreen) {
-        showToast('Press ESC to exit fullscreen');
+        showToast('ESC를 눌러 전체 화면 종료');
     }
 
     // Resize flipbook
@@ -1138,7 +1138,7 @@ function shareLink() {
 
     if (navigator.clipboard) {
         navigator.clipboard.writeText(url).then(() => {
-            showToast('Link copied to clipboard!');
+            showToast('링크가 복사되었습니다!');
         }).catch(() => {
             fallbackCopyToClipboard(url);
         });
