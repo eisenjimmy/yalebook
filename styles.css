@@ -742,3 +742,84 @@ body {
         background: white !important;
     }
 }
+
+/* =========================================
+   Flip Guides (Desktop Only)
+   ========================================= */
+.flip-guide {
+    position: absolute;
+    bottom: 0;
+    width: 80px;
+    height: 80px;
+    pointer-events: none;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.flip-guide-left {
+    left: 0;
+    background: radial-gradient(circle at bottom left, rgba(245, 158, 11, 0.6) 0%, transparent 70%);
+    border-bottom-left-radius: 4px;
+    animation: pulse-orange 2s infinite;
+}
+
+.flip-guide-right {
+    right: 0;
+    background: radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.6) 0%, transparent 70%);
+    border-bottom-right-radius: 4px;
+    animation: pulse-orange 2s infinite;
+    animation-delay: 1s;
+}
+
+.guide-label {
+    position: absolute;
+    bottom: -30px;
+    width: 200px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    font-weight: 500;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.guide-label.left {
+    left: 0;
+    text-align: left;
+}
+
+.guide-label.right {
+    right: 0;
+    text-align: right;
+}
+
+@keyframes pulse-orange {
+    0% {
+        opacity: 0.3;
+        transform: scale(0.9);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+
+    100% {
+        opacity: 0.3;
+        transform: scale(1.2);
+    }
+}
+
+/* =========================================
+   Mobile Controls
+   ========================================= */
+#mobile-controls button:active {
+    transform: scale(0.95);
+}
+
+/* Prevent text selection on mobile buttons */
+#mobile-controls {
+    user-select: none;
+    -webkit-user-select: none;
+}

@@ -77,6 +77,7 @@ function init() {
 
     // Setup Zoom and Pan Controls (Global)
     setupZoomPanControls();
+    setupMobileControls(); // Init mobile UI
 }
 
 function checkMobileMode() {
@@ -139,6 +140,7 @@ async function loadPdfFromUrl(url) {
 
         // Update crease visibility
         updateCreaseVisibility();
+        updateFlipGuides();
 
         hideLoading();
 
@@ -524,6 +526,7 @@ async function initFlipbook() {
         updateUrl();
         renderVisiblePages();
         updateCoverState();
+        updateFlipGuides();
     });
 
     // Pre-render upcoming pages when flip starts and show page underneath
@@ -802,24 +805,51 @@ function setupZoomPanControls() {
         }
     });
 
-    // Mobile pinch-zoom support
+    // Mobile pinch-zoom + Two-finger Pan support
     let initialPinchDistance = 0;
     let initialPinchZoom = 1;
+    let initialPinchCenter = { x: 0, y: 0 };
+    let initialPanState = { x: 0, y: 0 };
 
     magazineContainer.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
+            // Stop propagation to prevent page flip engine from interpreting this as a swipe
+            e.stopPropagation();
+
             initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
             initialPinchZoom = state.zoom;
+            initialPinchCenter = getCenter(e.touches[0], e.touches[1]);
+            initialPanState = { x: state.panX, y: state.panY };
         }
-    }, { passive: true });
+    }, { passive: false }); // passive: false needed to allow preventDefault? Actually capture is better?
 
     magazineContainer.addEventListener('touchmove', (e) => {
         if (e.touches.length === 2) {
-            e.preventDefault();
+            e.preventDefault(); // Prevent browser zoom/scroll
+            e.stopPropagation(); // Prevent page flip
+
+            // 1. PINCH ZOOM
             const distance = getDistance(e.touches[0], e.touches[1]);
-            const scale = distance / initialPinchDistance;
-            state.zoom = Math.min(Math.max(initialPinchZoom * scale, state.minZoom), state.maxZoom);
+            if (initialPinchDistance > 0) {
+                const scale = distance / initialPinchDistance;
+                state.zoom = Math.min(Math.max(initialPinchZoom * scale, state.minZoom), state.maxZoom);
+            }
+
+            // 2. TWO-FINGER PAN
+            const currentCenter = getCenter(e.touches[0], e.touches[1]);
+            const deltaX = currentCenter.x - initialPinchCenter.x;
+            const deltaY = currentCenter.y - initialPinchCenter.y;
+
+            state.panX = initialPanState.x + deltaX;
+            state.panY = initialPanState.y + deltaY;
+
             updateTransform();
+        } else if (state.isMobilePanMode && e.touches.length === 1) {
+            // Single finger pan in Pan Mode
+            e.preventDefault();
+            e.stopPropagation();
+            // Logic for 1-finger pan needs distinct start tracking
+            // For now, let's rely on 2-finger pan or the toggle buttons we add below
         }
     }, { passive: false });
 
@@ -827,6 +857,13 @@ function setupZoomPanControls() {
         const dx = touch1.clientX - touch2.clientX;
         const dy = touch1.clientY - touch2.clientY;
         return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function getCenter(touch1, touch2) {
+        return {
+            x: (touch1.clientX + touch2.clientX) / 2,
+            y: (touch1.clientY + touch2.clientY) / 2
+        };
     }
 
     // Double-click to toggle zoom
@@ -1264,6 +1301,129 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+function updateFlipGuides() {
+    const leftGuide = document.querySelector('.flip-guide-left');
+    const rightGuide = document.querySelector('.flip-guide-right');
+    const currentPage = state.currentPage; // 1-based index
+
+    if (leftGuide) {
+        // Hide left guide if on first page
+        if (currentPage === 1) leftGuide.classList.add('hidden');
+        else leftGuide.classList.remove('hidden', 'md:block'); // Ensure it respects md:block but removes hidden
+        // Actually, styles use md:block to show. 'hidden' overrides it.
+        // So toggle 'hidden' is enough.
+        // But wait, the HTML has `hidden md:block`.
+        // If I remove `hidden`, `md:block` takes over on desktop. Correct.
+    }
+
+    // Refined logic:
+    if (leftGuide) {
+        // Page 1: Hide
+        if (currentPage === 1) {
+            leftGuide.classList.add('hidden');
+        } else {
+            leftGuide.classList.remove('hidden');
+        }
+    }
+
+    if (rightGuide) {
+        // Last page: Hide
+        // Note: In double page mode, totalPages might be odd/even.
+        // If we are at the very end, hide right guide.
+        if (currentPage >= state.totalPages) {
+            rightGuide.classList.add('hidden');
+        } else {
+            rightGuide.classList.remove('hidden');
+        }
+    }
+}
+
+// ============================================
+// Utility Functions
+// ============================================
+
+function setupMobileControls() {
+    const prevBtn = document.getElementById('mob-prev');
+    const nextBtn = document.getElementById('mob-next');
+    const panToggleBtn = document.getElementById('mob-pan-toggle');
+    const iconPanOff = document.getElementById('icon-pan-off');
+    const iconPanOn = document.getElementById('icon-pan-on');
+    const magazineContainer = document.getElementById('magazine-container');
+
+    state.isMobilePanMode = false;
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (state.pageFlip) state.pageFlip.flipPrev();
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            if (state.pageFlip) state.pageFlip.flipNext();
+        });
+    }
+
+    if (panToggleBtn) {
+        panToggleBtn.addEventListener('click', () => {
+            state.isMobilePanMode = !state.isMobilePanMode;
+
+            // UI Update
+            if (state.isMobilePanMode) {
+                iconPanOff.classList.add('hidden');
+                iconPanOn.classList.remove('hidden');
+                panToggleBtn.classList.add('bg-white/10');
+            } else {
+                iconPanOff.classList.remove('hidden');
+                iconPanOn.classList.add('hidden');
+                panToggleBtn.classList.remove('bg-white/10');
+            }
+        });
+    }
+
+    // Single Finger Pan Logic
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+
+    const handleTouchStart = (e) => {
+        if (state.isMobilePanMode && e.touches.length === 1) {
+            e.stopPropagation(); // Stop flip engine
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        if (state.isMobilePanMode && e.touches.length === 1) {
+            e.preventDefault();
+            e.stopPropagation(); // Stop flip engine
+
+            const deltaX = e.touches[0].clientX - lastTouchX;
+            const deltaY = e.touches[0].clientY - lastTouchY;
+
+            state.panX += deltaX;
+            state.panY += deltaY;
+            updateTransform();
+
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+        }
+    };
+
+    const handleTouchEnd = (e) => {
+        // Intercept touchend to prevent "tap to flip" or "swipe release" logic in the library
+        if (state.isMobilePanMode) {
+            e.stopPropagation();
+        }
+    };
+
+    // Use Capture phase to intercept events BEFORE StPageFlip gets them
+    magazineContainer.addEventListener('touchstart', handleTouchStart, { passive: false, capture: true });
+    magazineContainer.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+    magazineContainer.addEventListener('touchend', handleTouchEnd, { passive: false, capture: true });
+    magazineContainer.addEventListener('touchcancel', handleTouchEnd, { passive: false, capture: true });
 }
 
 // ============================================
