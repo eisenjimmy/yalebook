@@ -1509,6 +1509,7 @@ function setupMobileControls() {
     let initialPinchZoom = 1;
     let initialPinchCenter = { x: 0, y: 0 };
     let initialPanState = { x: 0, y: 0 };
+    let runs2FingerLogic = false;
 
     // Single Finger Pan Logic
     let lastTouchX = 0;
@@ -1518,6 +1519,7 @@ function setupMobileControls() {
         // 2-Finger Pinch/Pan (Capture phase to block StPageFlip)
         if (e.touches.length === 2) {
             e.stopPropagation(); // Block StPageFlip
+            runs2FingerLogic = true;
 
             initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
             initialPinchZoom = state.zoom;
@@ -1539,6 +1541,7 @@ function setupMobileControls() {
         if (e.touches.length === 2) {
             e.preventDefault(); // Prevent browser behavior
             e.stopPropagation(); // Block StPageFlip
+            runs2FingerLogic = true;
 
             // Pinch Zoom
             const distance = getDistance(e.touches[0], e.touches[1]);
@@ -1577,21 +1580,24 @@ function setupMobileControls() {
     };
 
     const handleTouchEnd = (e) => {
-        // Block multi-touch end events if needed, though usually start/move is enough
-        // Intercept touchend to prevent "tap to flip" or "swipe release" logic in the library
-        if (state.isMobilePanMode || e.touches.length > 0) { // e.touches is 0 on touchend usually, need changedTouches?
-            // Actually StPageFlip uses touchend to determine swipe result.
-            // If we stopped start/move, it might not have started a flip.
-            // But let's be safe.
+        // If we were running 2-finger logic, we must block this end event
+        if (runs2FingerLogic) {
+            e.stopPropagation();
+
+            // If all fingers are gone, we can reset the flag
+            if (e.touches.length === 0) {
+                runs2FingerLogic = false;
+
+                // Trigger high-res re-render after pinch ends
+                if (state.zoom > 1) {
+                    triggerHighResRender();
+                }
+            }
+            return;
         }
 
         if (state.isMobilePanMode) {
             e.stopPropagation();
-        }
-
-        // Trigger high-res re-render after pinch
-        if (state.zoom > 1) {
-            triggerHighResRender();
         }
     };
 
