@@ -1,4 +1,4 @@
-# Yalebook - Premium PDF Magazine Viewer
+# 프리미엄 - 디지털 매거진 (Premium PDF Magazine Viewer)
 
 A high-fidelity, interactive PDF flipbook viewer designed for a premium reading experience. It combines realistic page-turning physics with modern web design aesthetics (Glassmorphism, Dark Mode) and robust navigation controls.
 
@@ -10,12 +10,13 @@ A high-fidelity, interactive PDF flipbook viewer designed for a premium reading 
 - **Dynamic Shadows**: Real-time shadow generation during drags to enhance depth.
 
 ### 🎮 Advanced Navigation & Interaction
+- **Toolbar PDF Upload**: Easily upload your own PDF directly from the top-left toolbar while viewing.
 - **Smart Zoom & Pan**:
     - **Mouse Wheel**: Smooth zoom in/out centered on cursor.
     - **Right-Click Drag**: Intuitive panning (Grab & Drag) similar to professional design software.
     - **Context Menu Suppression**: Browser context menu overrides to prevent interruptions.
 - **Consistent Controls**: Custom toolbar with floating navigation buttons.
-- **Mobile Optimized**: Touch-friendly interface with responsive layout adjustments.
+- **Mobile Optimized**: Touch-friendly interface with responsive layout adjustments and optimized default zoom (90%).
 
 ### 🎨 Premium UI/UX
 - **Glassmorphism Design**: Translucent, blurred UI elements (`backdrop-filter`) for a modern look.
@@ -31,6 +32,8 @@ A high-fidelity, interactive PDF flipbook viewer designed for a premium reading 
 
 ## 🚀 Recent Updates & Fixes
 
+- **Toolbar Upload**: Added PDF upload button to top-left toolbar for quick document switching.
+- **Mobile Zoom**: Default 90% zoom on mobile for better page visibility with margins.
 - **Drag Rendering Engine**: Fixed a critical artifact where pages would render out-of-flow during drag operations.
 - **Positioning Logic**: Enforced absolute positioning for physics elements to prevent CSS conflicts.
 - **Performance**: Added `preRenderAllPages` logic to ensure seamless page transitions without white flashes.
@@ -48,4 +51,4 @@ A high-fidelity, interactive PDF flipbook viewer designed for a premium reading 
     npx http-server .
     ```
 3.  **Open** your browser to `http://localhost:8080`.
-4.  **Upload** a PDF file or view the default sample.
+4.  **Upload** a PDF file using the toolbar button or view the default sample.
