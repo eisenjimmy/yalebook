@@ -37,6 +37,7 @@ const elements = {
     uploadScreen: document.getElementById('upload-screen'),
     viewerContainer: document.getElementById('viewer-container'),
     pdfUpload: document.getElementById('pdf-upload'),
+    pdfUploadToolbar: document.getElementById('pdf-upload-toolbar'),
     flipbook: document.getElementById('flipbook'),
     creaseOverlay: document.getElementById('crease-overlay'),
     loadingOverlay: document.getElementById('loading-overlay'),
@@ -98,6 +99,11 @@ function checkMobileMode() {
         }
     }
 
+    // Set slightly zoomed out default for mobile
+    if (state.isMobile && state.zoom === 1) {
+        state.zoom = 0.9;
+    }
+
     return wasMobile !== state.isMobile;
 }
 
@@ -154,6 +160,10 @@ async function loadPdfFromUrl(url) {
 function setupEventListeners() {
     // File Upload
     elements.pdfUpload.addEventListener('change', handleFileUpload);
+    // Toolbar File Upload
+    if (elements.pdfUploadToolbar) {
+        elements.pdfUploadToolbar.addEventListener('change', handleToolbarFileUpload);
+    }
 
     // Drag and Drop
     const uploadContainer = document.querySelector('.upload-container');
@@ -229,6 +239,34 @@ function handleFileUpload(e) {
     if (file && file.type === 'application/pdf') {
         loadPdf(file);
     }
+}
+
+function handleToolbarFileUpload(e) {
+    const file = e.target.files[0];
+    if (file && file.type === 'application/pdf') {
+        // Reset state for new PDF
+        state.pageCache.clear();
+        state.pageTexts.clear();
+        state.searchResults = [];
+        state.currentSearchIndex = -1;
+        state.currentPage = 1;
+        state.zoom = 1;
+        state.panX = 0;
+        state.panY = 0;
+
+        // Clear search input
+        if (elements.searchInput) {
+            elements.searchInput.value = '';
+        }
+        if (elements.searchResults) {
+            elements.searchResults.textContent = '';
+        }
+
+        // Load the new PDF
+        loadPdf(file);
+    }
+    // Reset input so same file can be selected again
+    e.target.value = '';
 }
 
 function handleDragOver(e) {
