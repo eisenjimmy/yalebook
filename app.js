@@ -74,7 +74,7 @@ function init() {
     checkUrlForPdf();
     checkMobileMode();
     // Auto-load the PDF from book folder
-    loadPdfFromUrl('book/book.pdf');
+    loadPdfFromUrl('book/book2.pdf');
 
     // Setup Zoom and Pan Controls (Global)
     setupZoomPanControls();
