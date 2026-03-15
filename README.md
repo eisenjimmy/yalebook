@@ -2,6 +2,8 @@
 
 A high-fidelity, interactive PDF flipbook viewer designed for a premium reading experience. It combines realistic page-turning physics with modern web design aesthetics (Glassmorphism, Dark Mode) and robust navigation controls.
 
+https://eisenjimmy.github.io/yalebook/
+
 ## 🌟 Key Features
 
 ### 📖 Realistic Reading Experience
