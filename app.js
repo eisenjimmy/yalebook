@@ -113,11 +113,11 @@ async function loadPdfFromUrl(url) {
 
     try {
         // Use PDF.js range requests — only downloads byte ranges needed for each page.
-        // Requires the server to support Accept-Ranges: bytes (Cloudflare R2 does).
+        // Cloudflare R2 supports Accept-Ranges: bytes, so this works perfectly.
         const loadingTask = pdfjsLib.getDocument({
             url: url,
-            rangeChunkSize: 65536,   // 64 KB per chunk
-            disableAutoFetch: true,  // don't prefetch entire file
+            rangeChunkSize: 131072,  // 128 KB per chunk — faster for large PDFs
+            disableAutoFetch: true,  // don't prefetch entire file upfront
             disableStream: false,    // enable streaming
         });
 
@@ -126,40 +126,40 @@ async function loadPdfFromUrl(url) {
             if (total) {
                 const pct = Math.round((loaded / total) * 100);
                 showLoading(`PDF 로딩 중... ${pct}%`);
-                updateLoadingProgress(pct);
             }
         };
 
         state.pdfDoc = await loadingTask.promise;
-        updateLoadingProgress(100);
-
         state.totalPages = state.pdfDoc.numPages;
 
         // Update UI
         elements.totalPages.textContent = state.totalPages;
         elements.pageInput.max = state.totalPages;
 
-        // Show viewer BEFORE initializing flipbook so it can measure dimensions
+        // Show viewer BEFORE rendering so it can measure dimensions
         elements.uploadScreen.classList.add('hidden');
         elements.viewerContainer.classList.remove('hidden');
 
-        // Wait for the DOM to update and have proper dimensions
-        await new Promise(resolve => {
-            requestAnimationFrame(() => {
-                setTimeout(resolve, 100);
-            });
-        });
+        // Wait one frame for DOM layout
+        await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 50)));
 
-        // Initialize flipbook (renders only visible + nearby pages)
+        // Initialize flipbook skeleton (page divs with spinners)
         await initFlipbook();
 
-        // Update crease visibility
+        // Update crease & guides
         updateCreaseVisibility();
         updateFlipGuides();
 
+        // Hide loading overlay — viewer is now visible with first pages
         hideLoading();
 
-        // Extract text for search in the background — doesn't block the viewer
+        // --- BACKGROUND RENDERING ---
+        // Pages 1-4 are the highest priority (cover + first spread already
+        // rendered by initFlipbook's renderVisiblePages). Render any remaining
+        // priority pages, then queue the rest in idle batches.
+        scheduleBackgroundRender();
+
+        // --- BACKGROUND TEXT EXTRACTION (for search) ---
         extractAllPageTexts();
 
     } catch (error) {
@@ -168,6 +168,43 @@ async function loadPdfFromUrl(url) {
         showToast('PDF 로딩 오류.');
     }
 }
+
+// Drains a background render queue page-by-page using requestIdleCallback,
+// so the main thread stays free for page-flip interactions.
+function scheduleBackgroundRender() {
+    let nextPage = 5; // pages 1-4 are handled by initFlipbook → renderVisiblePages
+
+    function renderNextBatch(deadline) {
+        // Render up to 3 pages per idle slice, or stop if time's up
+        let rendered = 0;
+        while (nextPage <= state.totalPages && rendered < 3) {
+            const pageNum = nextPage++;
+            // Don't re-render pages already done
+            const el = document.querySelector(`.page[data-page-num="${pageNum}"] .page-content`);
+            if (el && !el.querySelector('canvas')) {
+                renderPageContent(pageNum); // fire-and-forget
+            }
+            rendered++;
+            // Yield if deadline is close (< 10ms remaining)
+            if (deadline && deadline.timeRemaining && deadline.timeRemaining() < 10) break;
+        }
+
+        if (nextPage <= state.totalPages) {
+            if (window.requestIdleCallback) {
+                requestIdleCallback(renderNextBatch, { timeout: 2000 });
+            } else {
+                setTimeout(() => renderNextBatch(null), 200);
+            }
+        }
+    }
+
+    if (window.requestIdleCallback) {
+        requestIdleCallback(renderNextBatch, { timeout: 3000 });
+    } else {
+        setTimeout(() => renderNextBatch(null), 500);
+    }
+}
+
 
 function setupEventListeners() {
     // File Upload
@@ -551,7 +588,11 @@ async function extractAllPageTexts() {
         }
     }
     state.textExtractionDone = true;
-    // If user already typed a query, re-run search now that index is ready
+
+    // Notify search that index is ready
+    document.dispatchEvent(new CustomEvent('searchIndexReady'));
+
+    // If user already typed a query, re-run it now
     if (elements.searchInput.value.trim()) {
         handleSearch();
     }
@@ -1138,9 +1179,16 @@ function handleSearch() {
         return;
     }
 
-    // Text index still building — show a hint and wait
+    // Text index still building — show a hint and wait for it
     if (!state.textExtractionDone) {
         elements.searchResults.textContent = '색인 중...';
+        // Subscribe once — auto-retry when indexing is done
+        const retry = () => {
+            document.removeEventListener('searchIndexReady', retry);
+            handleSearch();
+        };
+        document.removeEventListener('searchIndexReady', retry); // prevent duplicates
+        document.addEventListener('searchIndexReady', retry, { once: true });
         return;
     }
 
@@ -1159,7 +1207,7 @@ function handleSearch() {
         goToPage(state.searchResults[0]);
         updateSearchIndicator();
         // Highlight after navigating
-        setTimeout(() => highlightSearchMatches(query), 100);
+        setTimeout(() => highlightSearchMatches(query), 150);
     } else {
         state.currentSearchIndex = -1;
         elements.searchResults.textContent = '결과 없음';
