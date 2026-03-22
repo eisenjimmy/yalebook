@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="프리미엄 - 디지털 매거진. 아름다운 페이지 넘김 효과로 경험하는 디지털 매거진">
-    <title>프리미엄 - 디지털 매거진</title>
+    <meta name="description" content="예일장로교회 예수마을 19호 디지털 매거진. 아름다운 페이지 넘김 효과로 경험하는 디지털 매거진">
+    <title>예일장로교회 - 예수마을 19호</title>
 
     <!-- Tailwind CSS v3 -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -48,11 +48,11 @@
                         d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
             </div>
-            <h1 class="text-3xl font-light text-white mb-3">프리미엄 - 디지털 매거진</h1>
-            <p class="text-stone-400 mb-8">프리미엄 디지털 매거진 뷰어입니다</p>
+            <h1 class="text-3xl font-light text-white mb-3">예일장로교회 - 예수마을 19호</h1>
+            <p class="text-stone-400 mb-8">예일장로교회 디지털 매거진 뷰어입니다</p>
 
             <label
-                class="upload-btn group cursor-pointer inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-medium rounded-xl transition-all duration-300 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-105">
+                class="upload-btn group cursor-pointer inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-medium rounded-xl transition-all duration-300 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-105 hidden">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -61,7 +61,7 @@
                 <input type="file" id="pdf-upload" accept=".pdf" class="hidden">
             </label>
 
-            <p class="text-stone-500 text-sm mt-6">또는 여기에 PDF를 드래그 앤 드롭하세요</p>
+            <p class="text-stone-500 text-sm mt-6 hidden">또는 여기에 PDF를 드래그 앤 드롭하세요</p>
         </div>
     </div>
 
@@ -84,8 +84,8 @@
 
             <!-- Left: Page Info & Upload -->
             <div class="flex items-center gap-4">
-                <!-- Upload PDF Button -->
-                <label class="toolbar-btn cursor-pointer" title="PDF 업로드">
+                <!-- Upload PDF Button (hidden) -->
+                <label class="toolbar-btn cursor-pointer hidden" title="PDF 업로드">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -239,9 +239,15 @@
 
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="fixed inset-0 z-[100] bg-stone-900/95 flex items-center justify-center hidden">
-        <div class="text-center">
-            <div class="loading-spinner mb-4"></div>
-            <p class="text-stone-400" id="loading-text">PDF 로딩 중...</p>
+        <div class="text-center w-64">
+            <div class="loading-spinner mb-4 mx-auto"></div>
+            <p class="text-stone-400 mb-3" id="loading-text">PDF 로딩 중...</p>
+            <!-- Progress bar -->
+            <div class="w-full bg-stone-700 rounded-full h-1.5 overflow-hidden">
+                <div id="loading-progress-bar"
+                    class="h-full bg-amber-500 rounded-full transition-all duration-300 opacity-0"
+                    style="width: 0%"></div>
+            </div>
         </div>
     </div>
 

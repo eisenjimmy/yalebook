@@ -22,6 +22,7 @@ const state = {
     currentSearchIndex: -1,
     currentSearchQuery: '',
     pageTexts: new Map(),
+    textExtractionDone: false,  // true once all page texts are indexed
     isFullscreen: false,
     basePageWidth: 400,
     basePageHeight: 560,
@@ -111,20 +112,32 @@ async function loadPdfFromUrl(url) {
     showLoading('PDF 로딩 중...');
 
     try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to load PDF');
+        // Use PDF.js range requests — only downloads byte ranges needed for each page.
+        // Requires the server to support Accept-Ranges: bytes (Cloudflare R2 does).
+        const loadingTask = pdfjsLib.getDocument({
+            url: url,
+            rangeChunkSize: 65536,   // 64 KB per chunk
+            disableAutoFetch: true,  // don't prefetch entire file
+            disableStream: false,    // enable streaming
+        });
 
-        const arrayBuffer = await response.arrayBuffer();
-        state.pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        // Show download progress
+        loadingTask.onProgress = ({ loaded, total }) => {
+            if (total) {
+                const pct = Math.round((loaded / total) * 100);
+                showLoading(`PDF 로딩 중... ${pct}%`);
+                updateLoadingProgress(pct);
+            }
+        };
+
+        state.pdfDoc = await loadingTask.promise;
+        updateLoadingProgress(100);
+
         state.totalPages = state.pdfDoc.numPages;
 
         // Update UI
         elements.totalPages.textContent = state.totalPages;
         elements.pageInput.max = state.totalPages;
-
-        // Extract text for search
-        showLoading('페이지 준비 중...');
-        await extractAllPageTexts();
 
         // Show viewer BEFORE initializing flipbook so it can measure dimensions
         elements.uploadScreen.classList.add('hidden');
@@ -137,18 +150,17 @@ async function loadPdfFromUrl(url) {
             });
         });
 
-        // Initialize flipbook
+        // Initialize flipbook (renders only visible + nearby pages)
         await initFlipbook();
-
-        // Pre-render all pages to ensure smooth flipping
-        showLoading('페이지 렌더링 중...');
-        await preRenderAllPages();
 
         // Update crease visibility
         updateCreaseVisibility();
         updateFlipGuides();
 
         hideLoading();
+
+        // Extract text for search in the background — doesn't block the viewer
+        extractAllPageTexts();
 
     } catch (error) {
         console.error('Error loading PDF:', error);
@@ -296,6 +308,8 @@ async function loadPdf(file) {
     showLoading('Loading PDF...');
 
     try {
+        // For local files we still need the full ArrayBuffer (browser constraint),
+        // but we can show the viewer immediately and render lazily.
         const arrayBuffer = await file.arrayBuffer();
         state.pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         state.totalPages = state.pdfDoc.numPages;
@@ -304,25 +318,20 @@ async function loadPdf(file) {
         elements.totalPages.textContent = state.totalPages;
         elements.pageInput.max = state.totalPages;
 
-        // Extract text for search
-        showLoading('Preparing pages...');
-        await extractAllPageTexts();
-
-        // Initialize flipbook
-        await initFlipbook();
-
-        // Pre-render all pages to ensure smooth flipping
-        showLoading('Rendering pages...');
-        await preRenderAllPages();
-
-        // Show viewer
+        // Show viewer BEFORE initializing flipbook so it can measure dimensions
         elements.uploadScreen.classList.add('hidden');
         elements.viewerContainer.classList.remove('hidden');
+
+        // Initialize flipbook (renders only visible + nearby pages)
+        await initFlipbook();
 
         // Update crease visibility
         updateCreaseVisibility();
 
         hideLoading();
+
+        // Extract text for search in the background — doesn't block the viewer
+        extractAllPageTexts();
 
     } catch (error) {
         console.error('Error loading PDF:', error);
@@ -529,6 +538,7 @@ async function renderPageHighRes(pageNum) {
 }
 
 async function extractAllPageTexts() {
+    state.textExtractionDone = false;
     for (let i = 1; i <= state.totalPages; i++) {
         try {
             const page = await state.pdfDoc.getPage(i);
@@ -539,6 +549,11 @@ async function extractAllPageTexts() {
             console.error(`Error extracting text from page ${i}:`, error);
             state.pageTexts.set(i, '');
         }
+    }
+    state.textExtractionDone = true;
+    // If user already typed a query, re-run search now that index is ready
+    if (elements.searchInput.value.trim()) {
+        handleSearch();
     }
 }
 
@@ -1123,6 +1138,12 @@ function handleSearch() {
         return;
     }
 
+    // Text index still building — show a hint and wait
+    if (!state.textExtractionDone) {
+        elements.searchResults.textContent = '색인 중...';
+        return;
+    }
+
     state.currentSearchQuery = query;
     state.searchResults = [];
 
@@ -1415,6 +1436,15 @@ function showLoading(text = 'Loading...') {
 
 function hideLoading() {
     elements.loadingOverlay.classList.add('hidden');
+    updateLoadingProgress(0); // reset bar for next load
+}
+
+function updateLoadingProgress(pct) {
+    const bar = document.getElementById('loading-progress-bar');
+    if (bar) {
+        bar.style.width = `${pct}%`;
+        bar.style.opacity = pct > 0 && pct < 100 ? '1' : '0';
+    }
 }
 
 function showToast(message, duration = 3000) {
